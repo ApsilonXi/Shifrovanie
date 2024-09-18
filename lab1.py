@@ -5,6 +5,7 @@ def help_def_no_key(symbol):
             if polibius_alph[row][colmn] == symbol.upper():
                 new = f'{row}{colmn}'
                 return new
+    return f'{5}{3}'
 
 def help_def_with_key(symbol, key):
     new = ''
@@ -13,6 +14,7 @@ def help_def_with_key(symbol, key):
             if polibius_alph[row][colmn] == symbol.upper():
                 new = f'{key[row]}{key[colmn]}'
                 return new
+    return f'{key[5]}{key[3]}'
 
 def encrypt(text, key):
     match key:
@@ -41,7 +43,12 @@ def decrypt(text, key):
                 new_text = ''
                 for i in range(0, len(enc_text), 2):
                     try:
-                        new_text += polibius_alph[int(enc_text[i])][int(enc_text[i+1])]
+                        if i == 0:
+                            new_text += polibius_alph[int(enc_text[i])][int(enc_text[i+1])]
+                        elif (len(new_text) >= 2) and (new_text[len(new_text)-2] != '.'):
+                            new_text += (polibius_alph[int(enc_text[i])][int(enc_text[i+1])]).lower()
+                        else:
+                            new_text += polibius_alph[int(enc_text[i])][int(enc_text[i+1])]
                     except IndexError:
                         break
             with open('c:\EmilyVolkova\VUZ\Shifrovanie\decrypted_mumu.txt', 'w', encoding='utf-8') as f2:
@@ -52,7 +59,14 @@ def decrypt(text, key):
                 new_text = ''
                 for i in range(0, len(enc_text), 2):
                     try:
-                        new_text += polibius_alph[key.index(enc_text[i])][key.index(enc_text[i+1])]
+                        if i == 0:
+                            new_text += polibius_alph[key.index(enc_text[i])][key.index(enc_text[i+1])]
+                        elif len(new_text) >= 2:
+                            if new_text[len(new_text)-2] != '.':
+                                new_text += (polibius_alph[key.index(enc_text[i])][key.index(enc_text[i+1])]).lower()
+                        else:
+                            new_text +=  polibius_alph[key.index(enc_text[i])][key.index(enc_text[i+1])]
+                        
                     except IndexError:
                         break
             with open('c:\EmilyVolkova\VUZ\Shifrovanie\decrypted_mumu.txt', 'w', encoding='utf-8') as f2:
@@ -75,14 +89,18 @@ while True:
     match choice:
         case '1':
             key = input('Ключ: ')
-            if (key != 0) or (len(key) == 6):
+            if (key == '0'):
+                encrypt(path_en, key)
+            elif (len(set(key)) == 6):
                 encrypt(path_en, key)
             else:
                 print('Неверный ключ')
             break
         case '2':
             key = input('Ключ: ')
-            if (key != 0) or (len(key) == 6):
+            if (key == '0'):
+                decrypt(path_dec, key)
+            elif (len(set(key)) == 6):
                 decrypt(path_dec, key)
             else:
                 print('Неверный ключ')
