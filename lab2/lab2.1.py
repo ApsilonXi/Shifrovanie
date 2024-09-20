@@ -1,58 +1,49 @@
 import time
-import random
-import mouse  # Для работы с мышкой
-import os
+import mouse  # Нужно установить библиотеку python-mouse для отслеживания курсора
 
-class LinearCongruentialGenerator:
-    def __init__(self, n):
-        self.m = 2 ** n
-        self.a = self.generate_a()
-        self.b = self.generate_b()
-        self.c = self.generate_c()
-        self.current = self.c
+def generate_a_b_c():
+    current_time = int(time.time() * 1000)  # текущее время в миллисекундах
+    cursor_x, cursor_y = mouse.get_position()  # координаты курсора
 
-    def generate_a(self):
-        while True:
-            a = int(time.time()) % (self.m - 1) + 1  # Генерация a
-            if a % 4 == 1:
-                return a
+    # Определяем параметры a, b и c0
+    a = (current_time + cursor_x + 1) % (2**24 - 1)  # избегаем 0
+    b = (current_time + cursor_y + 1) % (2**24 - 1) | 1  # делаем нечетным
+    c0 = (cursor_x + cursor_y) % (2**24 - 1)  # начальное значение
 
-    def generate_b(self):
-        while True:
-            b = random.randint(1, self.m - 1)
-            if b % 2 == 1 and os.gcd(b, self.m) == 1:
-                return b
+    return a, b, c0
 
-    def generate_c(self):
-        x, y = mouse.get_position()  # Получаем текущую позицию мыши
-        seed = (x + y + int(time.time())) % self.m
-        return seed
+def linear_congruential_generator(a, b, c0, m=(2**24)):
+    c = c0
+    while True:
+        c = (a * c + b) % m
+        yield c
 
-    def next(self):
-        self.current = (self.a * self.current + self.b) % self.m
-        return self.current
+def generate_numbers(num_count=1):
+    a, b, c0 = generate_a_b_c()
+    generator = linear_congruential_generator(a, b, c0)
+    
+    # Генерация числа и вывод на экран
+    if num_count == 1:
+        return next(generator)
+    
+    # Генерация последовательности чисел
+    numbers = [next(generator) for _ in range(num_count)]
+    return numbers
 
-    def generate_sequence(self, length):
-        return [self.next() for _ in range(length)]
-
-def save_to_file(sequence, filename):
+def save_numbers_to_file(numbers, filename='C:\EmilyVolkova\VUZ\Shifrovanie\lab2/random_numbers.txt'):
     with open(filename, 'w') as f:
-        for number in sequence:
+        for number in numbers:
             f.write(f"{number}\n")
 
 # Пример использования
 if __name__ == "__main__":
-    n = 24
-    lcg = LinearCongruentialGenerator(n)
+    single_number = generate_numbers()
+    print(f"Случайное число: {single_number}")
 
-    # Генерация одного числа
-    print("Сгенерированное псевдослучайное число:", lcg.next())
-
-    # Генерация последовательности длиной 10
     sequence_length = 10
-    sequence = lcg.generate_sequence(sequence_length)
-    print("Сгенерированная последовательность:", sequence)
-
+    numbers = generate_numbers(num_count=sequence_length)
+    print(f"Последовательность случайных чисел: {numbers}")
+    
     # Сохранение в файл
-    save_to_file(sequence, 'random_numbers.txt')
-    print("Последовательность сохранена в файл random_numbers.txt")
+    save_numbers_to_file(numbers)
+    print(f"Числа сохранены в файл random_numbers.txt")
