@@ -12,11 +12,11 @@ def load_key(file_path):
         c0 = int(f.readline().strip())
     return a, b, c0
 
-def linear_congruential_generator(a, b, c0, length):
+def linear_congruential_generator(a, b, c0, length): 
     numbers = []
     c = c0
     for _ in range(length):
-        c = (a * c + b) % (2**32)  # Используем 32-битный диапазон
+        c = (a * c + b) % (2**32)  
         numbers.append(c)
     return numbers
 
@@ -31,7 +31,7 @@ def encrypt_file(input_file, key_file, output_file):
 
     encrypted_data = bytearray()
     for i in range(length):
-        encrypted_byte = original_data[i] ^ (random_numbers[i] % 256)  # Используем значения в диапазоне 0-255
+        encrypted_byte = original_data[i] ^ (random_numbers[i] % 256)  
         encrypted_data.append(encrypted_byte)
 
     if confirm_replacement(output_file):
@@ -50,7 +50,7 @@ def decrypt_file(encrypted_file, key_file, output_file):
 
     decrypted_data = bytearray()
     for i in range(length):
-        decrypted_byte = encrypted_data[i] ^ (random_numbers[i] % 256)  # Возвращаемые значения в пределах 0-255
+        decrypted_byte = encrypted_data[i] ^ (random_numbers[i] % 256) 
         decrypted_data.append(decrypted_byte)
 
     if confirm_replacement(output_file):
@@ -59,15 +59,12 @@ def decrypt_file(encrypted_file, key_file, output_file):
         print(f"Файл расшифрован и сохранён как {output_file}")
 
 if __name__ == "__main__":
-    # Пример использования
     key_file = "lab2/key.txt"
 
-    # Шифрование
     input_file_to_encrypt = "lab2/mumu.txt"
     encrypted_file = "lab2/encrypted_file.bin"
     encrypt_file(input_file_to_encrypt, key_file, encrypted_file)
 
-    # Дешифрование
     encrypted_file_to_decrypt = "lab2/encrypted_file.bin"
     decrypted_file = "lab2/decrypted_file.txt"
     #decrypt_file(encrypted_file_to_decrypt, key_file, decrypted_file)
