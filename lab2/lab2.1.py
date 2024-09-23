@@ -30,7 +30,7 @@ def generate_numbers(num_count=1):
     numbers = [next(generator) for _ in range(num_count)]
     return numbers
 
-def save_numbers_to_file(numbers, filename='C:\EmilyVolkova\VUZ\Shifrovanie\lab2/random_numbers.txt'):
+def save_numbers_to_file(numbers, filename='lab2/random_numbers.txt'):
     with open(filename, 'w') as f:
         for number in numbers:
             f.write(f"{number}\n")

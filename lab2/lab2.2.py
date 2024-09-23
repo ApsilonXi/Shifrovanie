@@ -1,23 +1,9 @@
 import os
-import time
-import struct
 
 def confirm_replacement(file_path):
     if os.path.exists(file_path):
         return input(f"Файл {file_path} уже существует. Заменить? (y/n): ").strip().lower() == 'y'
     return True
-
-def fixed_key_parameters():
-    a = 1664525  # Стандартный коэффициент для ЛКГ
-    b = 1013904223
-    c0 = 42  # Начальное значение
-    return a, b, c0
-
-def save_key(file_path, a, b, c0):
-    if confirm_replacement(file_path):
-        with open(file_path, 'w') as f:
-            f.write(f"{a}\n{b}\n{c0}\n")
-        print(f"Ключи сохранены в файл {file_path}")
 
 def load_key(file_path):
     with open(file_path, 'r') as f:
@@ -34,18 +20,18 @@ def linear_congruential_generator(a, b, c0, length):
         numbers.append(c)
     return numbers
 
-def encrypt_file(source_file, key_file, output_file):
+def encrypt_file(input_file, key_file, output_file):
     a, b, c0 = load_key(key_file)
     
-    with open(source_file, 'rb') as infile:
-        data = infile.read()
+    with open(input_file, 'rb') as infile:
+        original_data = infile.read()
 
-    length = len(data)
+    length = len(original_data)
     random_numbers = linear_congruential_generator(a, b, c0, length)
 
     encrypted_data = bytearray()
     for i in range(length):
-        encrypted_byte = data[i] ^ (random_numbers[i] % 256)  # Возвращаемимые значения в пределах 0-255
+        encrypted_byte = original_data[i] ^ (random_numbers[i] % 256)  # Используем значения в диапазоне 0-255
         encrypted_data.append(encrypted_byte)
 
     if confirm_replacement(output_file):
@@ -53,15 +39,35 @@ def encrypt_file(source_file, key_file, output_file):
             outfile.write(encrypted_data)
         print(f"Файл зашифрован и сохранён как {output_file}")
 
-if __name__ == '__main__':
-    # Определяем параметры ключа
-    a, b, c0 = fixed_key_parameters()
+def decrypt_file(encrypted_file, key_file, output_file):
+    a, b, c0 = load_key(key_file)
+    
+    with open(encrypted_file, 'rb') as infile:
+        encrypted_data = infile.read()
 
-    # Сохраняем ключ
-    key_file_path = 'C:\EmilyVolkova\VUZ\Shifrovanie\lab2/key.txt'
-    save_key(key_file_path, a, b, c0)
+    length = len(encrypted_data)
+    random_numbers = linear_congruential_generator(a, b, c0, length)
 
-    # Шифруем файл
-    source_file_path = 'C:\EmilyVolkova\VUZ\Shifrovanie\lab2/mumu.txt'  # Исходный файл
-    output_file_path = 'C:\EmilyVolkova\VUZ\Shifrovanie\lab2/encrypted.bin'  # Файл с зашифрованными данными
-    encrypt_file(source_file_path, key_file_path, output_file_path)
+    decrypted_data = bytearray()
+    for i in range(length):
+        decrypted_byte = encrypted_data[i] ^ (random_numbers[i] % 256)  # Возвращаемые значения в пределах 0-255
+        decrypted_data.append(decrypted_byte)
+
+    if confirm_replacement(output_file):
+        with open(output_file, 'wb') as outfile:
+            outfile.write(decrypted_data)
+        print(f"Файл расшифрован и сохранён как {output_file}")
+
+if __name__ == "__main__":
+    # Пример использования
+    key_file = "lab2/key.txt"
+
+    # Шифрование
+    input_file_to_encrypt = "lab2/mumu.txt"
+    encrypted_file = "lab2/encrypted_file.bin"
+    encrypt_file(input_file_to_encrypt, key_file, encrypted_file)
+
+    # Дешифрование
+    encrypted_file_to_decrypt = "lab2/encrypted_file.bin"
+    decrypted_file = "lab2/decrypted_file.txt"
+    #decrypt_file(encrypted_file_to_decrypt, key_file, decrypted_file)
