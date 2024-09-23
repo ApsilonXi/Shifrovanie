@@ -1,4 +1,5 @@
 import os
+import time
 
 def confirm_replacement(file_path):
     if os.path.exists(file_path):
@@ -63,8 +64,12 @@ if __name__ == "__main__":
 
     input_file_to_encrypt = "lab2/mumu.txt"
     encrypted_file = "lab2/encrypted_file.bin"
+    t1 = time.time()
     encrypt_file(input_file_to_encrypt, key_file, encrypted_file)
+    print('Время шифрования: ', time.time() - t1)
 
     encrypted_file_to_decrypt = "lab2/encrypted_file.bin"
     decrypted_file = "lab2/decrypted_file.txt"
+    #t1 = time.time()
     #decrypt_file(encrypted_file_to_decrypt, key_file, decrypted_file)
+    #print('Время дешифрования: ', time.time() - t1)

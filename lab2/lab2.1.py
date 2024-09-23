@@ -1,44 +1,41 @@
-import time
-import mouse 
+import numpy as np
+import matplotlib.pyplot as plt
 
-def generate_a_b_c():
-    current_time = int(time.time() * 1000)  # текущее время в миллисекундах
-    cursor_x, cursor_y = mouse.get_position()  # координаты курсора 
+def generate_random_sequence(c0, length, modulus=2**32, a=1664525, b=1013904223):
+    random_numbers = []
+    current_value = c0
+    for _ in range(length):
+        current_value = (a * current_value + b) % modulus
+        random_numbers.append(current_value / modulus)  # Нормализуем значение в [0, 1)
+    return random_numbers
 
-    a = (current_time + cursor_x + 1) % (2**24 - 1)  # не 0
-    b = (current_time + cursor_y + 1) % (2**24 - 1) | 1  # нечетное
-    c0 = (cursor_x + cursor_y) % (2**24 - 1)  # начальное значение
-
-    return a, b, c0
-
-def linear_congruential_generator(a, b, c0, m = (2**24)):
-    c = c0
-    while True:
-        c = (a * c + b) % m
-        yield c
-
-def generate_numbers(num_count=1):
-    a, b, c0 = generate_a_b_c()
-    generator = linear_congruential_generator(a, b, c0)
-    
-    if num_count == 1:
-        return next(generator)
-    
-    numbers = [next(generator) for _ in range(num_count)]
-    return numbers
-
-def save_numbers_to_file(numbers, filename='lab2/random_numbers.txt'):
+def save_to_file(numbers, filename):
     with open(filename, 'w') as f:
         for number in numbers:
             f.write(f"{number}\n")
 
-if __name__ == "__main__":
-    single_number = generate_numbers()
-    print(f"Случайное число: {single_number}")
+def plot_histogram(numbers):
+    plt.hist(numbers, bins=100, density=True, alpha=0.5, color='b')
+    plt.title('Гистограмма относительных частот')
+    plt.xlabel('Значения')
+    plt.ylabel('Относительная частота')
+    plt.grid(True)
+    plt.show()
 
-    sequence_length = 10
-    numbers = generate_numbers(num_count=sequence_length)
-    print(f"Последовательность случайных чисел: {numbers}")
-    
-    save_numbers_to_file(numbers)
-    print(f"Числа сохранены в файл random_numbers.txt")
+def main():
+    c0 = int(input("Введите порождающее число (c0): "))
+    length = int(input("Введите длину последовательности: "))
+    filename = input("Введите имя файла для сохранения: ")
+
+    # Генерация последовательности
+    random_numbers = generate_random_sequence(c0, length)
+
+    # Сохранение в файл
+    save_to_file(random_numbers, filename)
+    print(f"Последовательность сохранена в {filename}")
+
+    # Построение гистограммы
+    plot_histogram(random_numbers)
+
+if __name__ == "__main__":
+    main()
