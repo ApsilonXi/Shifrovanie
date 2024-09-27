@@ -6,7 +6,7 @@ def generate_random_sequence(c0, length, modulus=2**32, a=1664525, b=1013904223)
     current_value = c0
     for _ in range(length):
         current_value = (a * current_value + b) % modulus
-        random_numbers.append(current_value / modulus)  # Нормализуем значение в [0, 1)
+        random_numbers.append(current_value / modulus)  
     return random_numbers
 
 def save_to_file(numbers, filename):
