@@ -1,7 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+import mouse
+import math
 
-def generate_random_sequence(c0, length, modulus=2**32, a=1664525, b=1013904223):
+def generate_random_sequence(c0, length, a, b, modulus=2**32):
     random_numbers = []
     current_value = c0
     for _ in range(length):
@@ -22,13 +25,12 @@ def plot_histogram(numbers):
     plt.grid(True)
     plt.show()
 
-def main():
-    c0 = int(input("Введите порождающее число (c0): "))
+def main(a, b, c):
     length = int(input("Введите длину последовательности: "))
-    filename = input("Введите имя файла для сохранения: ")
+    filename = 'lab2/rand_num.txt'
 
     # Генерация последовательности
-    random_numbers = generate_random_sequence(c0, length)
+    random_numbers = generate_random_sequence(c, length, a, b)
 
     # Сохранение в файл
     save_to_file(random_numbers, filename)
@@ -37,5 +39,22 @@ def main():
     # Построение гистограммы
     plot_histogram(random_numbers)
 
+def generate_abc():
+    current_time = int(time.time() * 1000)  # текущее время в миллисекундах
+    cursor_x, cursor_y = mouse.get_position()  # координаты курсора
+
+    # Определяем параметры a, b и c0
+    a = (current_time + cursor_x + 1) % (2**48 - 1)  # избегаем 0
+    b = (current_time + cursor_y + 1) % (2**48 - 1) | 1  # делаем нечетным
+    c = (cursor_x + cursor_y) % (2**48 - 1)  # начальное значение
+    
+    return a, b, c
+
 if __name__ == "__main__":
-    main()
+    m = 2**48
+    while True:
+        a, b, c = generate_abc()
+        if (a % 4 == 1) and (math.gcd (m, b) == 1):
+            print(a, b, c)
+            break
+    main(a, b, c)

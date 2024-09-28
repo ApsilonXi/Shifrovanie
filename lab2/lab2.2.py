@@ -1,23 +1,41 @@
 import os
 import time
+import mouse
+import math
 
 def confirm_replacement(file_path):
     if os.path.exists(file_path):
         return input(f"Файл {file_path} уже существует. Заменить? (y/n): ").strip().lower() == 'y'
     return True
 
+def generate_abc():
+    current_time = int(time.time() * 1000)  # текущее время в миллисекундах
+    cursor_x, cursor_y = mouse.get_position()  # координаты курсора
+
+    # Определяем параметры a, b и c0
+    a = (current_time + cursor_x + 1) % (2**48 - 1)  # избегаем 0
+    b = (current_time + cursor_y + 1) % (2**48 - 1) | 1  # делаем нечетным
+    c = (cursor_x + cursor_y) % (2**48 - 1)  # начальное значение
+    
+    return a, b, c
+
 def load_key(file_path):
-    with open(file_path, 'r') as f:
-        a = int(f.readline().strip())
-        b = int(f.readline().strip())
-        c0 = int(f.readline().strip())
-    return a, b, c0
+    with open(file_path, 'w') as f:
+        while True:
+            a, b, c = generate_abc()
+            if (a % 4 == 1) and (math.gcd (2**48, b) == 1):
+                print(a, b, c)
+                f.write(str(a)+'\n')
+                f.write(str(b)+'\n')
+                f.write(str(c)+'\n')
+                break
+    return a, b, c
 
 def linear_congruential_generator(a, b, c0, length): 
     numbers = []
     c = c0
     for _ in range(length):
-        c = (a * c + b) % (2**32)  
+        c = (a * c + b) % (2**48)  
         numbers.append(c)
     return numbers
 
@@ -25,7 +43,7 @@ def encrypt_file(input_file, key_file, output_file):
     a, b, c0 = load_key(key_file)
     
     with open(input_file, 'rb') as infile:
-        original_data = infile.read()
+        original_data = (infile.read())[:len(infile)-1]
 
     length = len(original_data)
     random_numbers = linear_congruential_generator(a, b, c0, length)
@@ -70,6 +88,6 @@ if __name__ == "__main__":
 
     encrypted_file_to_decrypt = "lab2/encrypted_file.bin"
     decrypted_file = "lab2/decrypted_file.txt"
-    #t1 = time.time()
-    #decrypt_file(encrypted_file_to_decrypt, key_file, decrypted_file)
-    #print('Время дешифрования: ', time.time() - t1)
+    t1 = time.time()
+    decrypt_file(encrypted_file_to_decrypt, key_file, decrypted_file)
+    print('Время дешифрования: ', time.time() - t1)
