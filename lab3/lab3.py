@@ -174,7 +174,7 @@ def menu(text, key):
             encrypted = ''
             for i in range(0, len(text), 64):
                 segment = text[i:i+64]  
-                encrypted_segment = str(encrypt(segment, key)) 
+                encrypted_segment = str(encrypt(str(segment), key)) 
                 encrypted += encrypted_segment
             write_to_file(encrypted, "encrypt")
         case '2':
@@ -189,9 +189,9 @@ def main():
     key16 = input('key: ')
     # 908F6CA04B08D401 key
 
-    with open('lab3/mumu.txt', 'r', encoding='UTF-8') as file:
+    with open('lab3/mumu.txt', 'r', encoding="UTF-8") as file:
         text = file.read()
     
-    menu(text)
+    menu(text, key16)
 
 main()
