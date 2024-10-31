@@ -132,7 +132,7 @@ def encrypt(message, key):
     
     for loop in range(16):
         left_half, right_half = round(left_half, right_half, key_schedule[loop])
-        if loop == 15: # For Some Reason The Algorithm Doesn't Swap The Last Two Keys So This Switches Them Back
+        if loop == 15: 
             buffer = left_half
             left_half = right_half
             right_half = buffer
@@ -161,14 +161,37 @@ def decrypt(message, key):
     cyphertext = IP_Inverse(left_half + right_half)
     return cyphertext
 
-if __name__ == '__main___':
-    # 908F6CA04B08D401 key
+def write_to_file(text, name):
+    with open(f'lab3/{name}.txt', 'w', encoding="UTF-8") as f:
+        f.write(text)
+
+    print(f"File {name}.txt created")
+
+def menu(text, key):
+    choice = input('1. encrypt\n2. decrypt\n')
+    match choice:
+        case '1':
+            encrypted = ''
+            for i in range(0, len(text), 64):
+                segment = text[i:i+64]  
+                encrypted_segment = str(encrypt(segment, key)) 
+                encrypted += encrypted_segment
+            write_to_file(encrypted, "encrypt")
+        case '2':
+            decrypted = ""
+            for i in range(0, len(text), 64):
+                segment = text[i:i+64]  
+                decrypted_segment = str(bin_to_hex(decrypt(segment, key), 64)) 
+                decrypted += decrypted_segment
+            write_to_file(decrypted, "decrypt")
+
+def main():
     key16 = input('key: ')
+    # 908F6CA04B08D401 key
 
-    '''with open('lab3/mumu.txt', 'r') as file:
-        text = file.readlines()
-    print(text)'''
-    '''test1 = '1011101011101010111011111011100011101011111000101011101011101011'   #64
+    with open('lab3/mumu.txt', 'r', encoding='UTF-8') as file:
+        text = file.read()
+    
+    menu(text)
 
-    b = encrypt(test1, key16)
-    bin_to_hex(decrypt(b, key16), 64)'''
+main()
