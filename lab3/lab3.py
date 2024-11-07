@@ -1,216 +1,412 @@
-import os
+import codecs
+class DES:
+	def __init__(self, pt_file=None, enc_file=None, dec_file=None,key=None,mode='encrypt'):
+		# Table of Position of 64 bits at initial level: Initial Permutation Table
+		self.initial_perm = [58, 50, 42, 34, 26, 18, 10, 2,
+						60, 52, 44, 36, 28, 20, 12, 4,
+						62, 54, 46, 38, 30, 22, 14, 6,
+						64, 56, 48, 40, 32, 24, 16, 8,
+						57, 49, 41, 33, 25, 17, 9, 1,
+						59, 51, 43, 35, 27, 19, 11, 3,
+						61, 53, 45, 37, 29, 21, 13, 5,
+						63, 55, 47, 39, 31, 23, 15, 7]
 
-def xor(a,b):
-    store = ''
-    for i in range(len(a)):
-        store += str((int(a[i]) + int(b[i])) % 2)
-    return store
+		# Expansion D-box Table
+		self.exp_d = [32, 1, 2, 3, 4, 5, 4, 5,
+				 6, 7, 8, 9, 8, 9, 10, 11,
+				 12, 13, 12, 13, 14, 15, 16, 17,
+				 16, 17, 18, 19, 20, 21, 20, 21,
+				 22, 23, 24, 25, 24, 25, 26, 27,
+				 28, 29, 28, 29, 30, 31, 32, 1]
 
-def bin_to_int(binary_string):
-    length = len(binary_string) - 1
-    number = 0
-    for bin in range(length + 1):
-        number += int(binary_string[bin]) * (2 ** (length - bin))
-    return number
+		# Straight Permutation Table
+		self.per = [16, 7, 20, 21,
+			   29, 12, 28, 17,
+			   1, 15, 23, 26,
+			   5, 18, 31, 10,
+			   2, 8, 24, 14,
+			   32, 27, 3, 9,
+			   19, 13, 30, 6,
+			   22, 11, 4, 25]
 
-def int_to_bin(integer):
-    return bin(integer)[2:]
+		# S-box Table
+		self.sbox = [[[14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7],
+				 [0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8],
+				 [4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0],
+				 [15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13]],
 
-def shifted(bits, shift):
-    return bits[shift:] + bits[:shift]
+				[[15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10],
+				 [3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5],
+				 [0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15],
+				 [13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9]],
 
-def bin_to_hex(binary, length):
-    bin_to_hex = {"0000" : '0',"0001" : '1',"0010" : '2',"0011" : '3',"0100" : '4',"0101" : '5',"0110" : '6',"0111" : '7',
-                  "1000" : '8',"1001" : '9',"1010" : 'A',"1011" : 'B',"1100" : 'C',"1101" : 'D',"1110" : 'E',"1111" : 'F'}
-    store = ''
-    for i in range(0,length,4):
-        store += bin_to_hex[str(binary[i:(i+4)])]
-    return store
-    
-def hex_to_binary(binary, length):
-    hex_to_bin = {'0' : "0000", '1' : "0001",'2' : "0010",'3' : "0011",'4' : "0100",'5' : "0101",'6' : "0110",'7' : "0111",
-                '8' : "1000",'9' : "1001",'A' : "1010",'B' : "1011",'C' : "1100",'D' : "1101",'E' : "1110",'F' : "1111" }
-    store = ''
-    for i in range(0,length):
-        store += hex_to_bin[str(binary[i])]
-    return store
+				[[10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8],
+				 [13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1],
+				 [13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7],
+				 [1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12]],
 
-def permute(data, permutation_table, length_of_output):
-    permutation = ''
-    for i in range(length_of_output):
-        permutation += data[permutation_table[i] - 1]
-    return permutation
+				[[7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15],
+				 [13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9],
+				 [10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4],
+				 [3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14]],
 
-def IP(data):
-    initial_perm = [58, 50, 42, 34, 26, 18, 10, 2, 60, 52, 44, 36, 28, 20, 12, 4,62, 54, 46, 38, 30, 22, 14, 6, 64, 56, 48, 40, 32, 24, 16, 8,
-                    57, 49, 41, 33, 25, 17, 9, 1, 59, 51, 43, 35, 27, 19, 11, 3, 61, 53, 45, 37, 29, 21, 13, 5, 63, 55, 47, 39, 31, 23, 15, 7]
-    return permute(data, initial_perm, 64)
-def IP_Inverse(data):
-    inverse_perm = [40, 8, 48, 16, 56, 24, 64, 32, 39, 7, 47, 15, 55, 23, 63, 31, 38, 6, 46, 14, 54, 22, 62, 30, 37, 5, 45, 13, 53, 21, 61, 29,
-                    36, 4, 44, 12, 52, 20, 60, 28, 35, 3, 43, 11, 51, 19, 59, 27, 34, 2, 42, 10, 50, 18, 58, 26, 33, 1, 41, 9, 49, 17, 57, 25 ]
-    return permute(data, inverse_perm, 64)
+				[[2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9],
+				 [14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6],
+				 [4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14],
+				 [11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3]],
 
-def f_expansion(bits):
-    expansion_perm = [32, 1 , 2 , 3 , 4 , 5 , 4 , 5, 6 , 7 , 8 , 9 , 8 , 9 , 10, 11, 12, 13, 12, 13, 14, 15, 16, 17,
-                      16, 17, 18, 19, 20, 21, 20, 21, 22, 23, 24, 25, 24, 25, 26, 27, 28, 29, 28, 29, 30, 31, 32, 1 ]
-    return permute(bits, expansion_perm, 48)
+				[[12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11],
+				 [10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8],
+				 [9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6],
+				 [4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13]],
 
-def f_key_mixing(bits, key):
-    return xor(bits, key)
+				[[4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1],
+				 [13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6],
+				 [1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2],
+				 [6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12]],
 
-def s_boxes(bits):
-    sboxes =   [[[14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7], [0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8], [4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0], [15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13 ]],       
-                [[15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10], [3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5], [0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15], [13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9 ]],
-                [[10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8], [13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1], [13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7], [1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12 ]],
-                [[7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15], [13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9], [10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4], [3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14 ]],
-                [[2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9], [14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6], [4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14], [11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3 ]],
-                [[12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11], [10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8], [9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6], [4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13 ]],
-                [[4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1], [13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6], [1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2], [6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12 ]],
-                [[13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7], [1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2], [7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8], [2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11 ]]]
-    substituted_string = ''
-    for i in range(0,48,6):
-        substring = (bits[0:48][i:i+6])
-        row = bin_to_int(substring[0] + substring[5])
-        column = bin_to_int(substring[1] + substring[2] + substring[3] + substring[4])
-        lookup = int_to_bin(sboxes[int(i/6)][row][column])
-        if len(lookup) < 4:
-            lookup = ((4 - len(lookup)) * '0') + lookup
-        substituted_string += lookup
+				[[13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7],
+				 [1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2],
+				 [7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8],
+				 [2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11]]]
 
-    return substituted_string
+		# Final Permutation Table
+		self.final_perm = [40, 8, 48, 16, 56, 24, 64, 32,
+					  39, 7, 47, 15, 55, 23, 63, 31,
+					  38, 6, 46, 14, 54, 22, 62, 30,
+					  37, 5, 45, 13, 53, 21, 61, 29,
+					  36, 4, 44, 12, 52, 20, 60, 28,
+					  35, 3, 43, 11, 51, 19, 59, 27,
+					  34, 2, 42, 10, 50, 18, 58, 26,
+					  33, 1, 41, 9, 49, 17, 57, 25]
 
-def f_permute(bits):
-    p_box = [16, 7, 20, 21, 29, 12, 28, 17, 1, 15, 23, 26, 5, 18, 31, 10, 2, 8, 24, 14, 32, 27, 3, 9, 19, 13, 30, 6, 22, 11, 4, 25]
-    return permute(bits, p_box, 32)
+		# --parity bit drop table
+		self.keyp = [57, 49, 41, 33, 25, 17, 9,
+				1, 58, 50, 42, 34, 26, 18,
+				10, 2, 59, 51, 43, 35, 27,
+				19, 11, 3, 60, 52, 44, 36,
+				63, 55, 47, 39, 31, 23, 15,
+				7, 62, 54, 46, 38, 30, 22,
+				14, 6, 61, 53, 45, 37, 29,
+				21, 13, 5, 28, 20, 12, 4]
 
-def f(bytes, key):
-    expanded = f_expansion(bytes)
-    mixed = f_key_mixing(expanded, key)
-    substituted = s_boxes(mixed)
-    permutation = f_permute(substituted)
-    return permutation
+		# Number of bit shifts
+		self.shift_table = [1, 1, 2, 2,
+					   2, 2, 2, 2,
+					   1, 2, 2, 2,
+					   2, 2, 2, 1]
 
-def round(left_half, right_half, key):
-    new_left_half = xor(left_half, f(right_half, key))
-    return (right_half, new_left_half)
+		# Key- Compression Table : Compression of key from 56 bits to 48 bits
+		self.key_comp = [14, 17, 11, 24, 1, 5,
+					3, 28, 15, 6, 21, 10,
+					23, 19, 12, 4, 26, 8,
+					16, 7, 27, 20, 13, 2,
+					41, 52, 31, 37, 47, 55,
+					30, 40, 51, 45, 33, 48,
+					44, 49, 39, 56, 34, 53,
+					46, 42, 50, 36, 29, 32]
 
-def generate_keys(intitial_state):
+		if mode == "encrypt" and pt_file and enc_file and key:
+			print("Шифрация алгоритмом DES...")
+			self.encrypt(pt_file, enc_file, key)
+			print(f"Текст успешно зашифрован и сохранен в {enc_file}")
+		elif mode == "decrypt" and enc_file and dec_file and key:
+			print("Дешифрация алгоритмом DES...")
+			self.decrypt(enc_file, dec_file, key)
+			print(f"Текст успешно расшифрован и сохранен в {dec_file}")
+		else:
+			print("Пожалуйста, укажите корректные файлы и ключи для выбранного режима работы (encrypt/decrypt).")
 
-    if len(intitial_state) != 64:
-        if len(intitial_state) == 16:
-            intitial_state = hex_to_binary(intitial_state, 16)
+
+	# Hexadecimal to binary conversion
+	@staticmethod
+	def hex2bin(s):
+		mp = {'0': "0000",
+			'1': "0001",
+			'2': "0010",
+			'3': "0011",
+			'4': "0100",
+			'5': "0101",
+			'6': "0110",
+			'7': "0111",
+			'8': "1000",
+			'9': "1001",
+			'A': "1010",
+			'B': "1011",
+			'C': "1100",
+			'D': "1101",
+			'E': "1110",
+			'F': "1111"}
+		bin = ""
+		for i in range(len(s)):
+			bin = bin + mp[s[i]]
+		return bin
+
+	# Binary to hexadecimal conversion
+	@staticmethod
+	def bin2hex(s):
+		mp = {"0000": '0',
+			"0001": '1',
+			"0010": '2',
+			"0011": '3',
+			"0100": '4',
+			"0101": '5',
+			"0110": '6',
+			"0111": '7',
+			"1000": '8',
+			"1001": '9',
+			"1010": 'A',
+			"1011": 'B',
+			"1100": 'C',
+			"1101": 'D',
+			"1110": 'E',
+			"1111": 'F'}
+		hex = ""
+		for i in range(0, len(s), 4):
+			ch = ""
+			ch = ch + s[i]
+			ch = ch + s[i + 1]
+			ch = ch + s[i + 2]
+			ch = ch + s[i + 3]
+			hex = hex + mp[ch]
+
+		return hex
+
+	# Конвертация двоичное-шестнадцатиричное
+	@staticmethod
+	def bin2dec(binary):
+		decimal, i, n = 0, 0, 0
+		while binary != 0:
+			dec = binary % 10
+			decimal = decimal + dec * pow(2, i)
+			binary = binary//10
+			i += 1
+		return decimal
+
+	# Конвертация шестнадцатеричное-двоичное
+	@staticmethod
+	def dec2bin(num):
+		res = bin(num).replace("0b", "")
+		if len(res) % 4 != 0:
+			div = len(res) / 4
+			div = int(div)
+			counter = (4 * (div + 1)) - len(res)
+			for i in range(0, counter):
+				res = '0' + res
+		return res
+
+	# Функция перестановки по заданной таблице
+	@staticmethod
+	def permute(k, arr, n):
+		permutation = ""
+		for i in range(0, n):
+			permutation = permutation + k[arr[i] - 1]
+		return permutation
+
+	# Функция левого сдвига.
+	@staticmethod
+	def shift_left(k, nth_shifts):
+		if not k:
+			raise ValueError('Empty string passed to shift func.')
+		s = ""
+		for i in range(nth_shifts):
+			for j in range(1, len(k)):
+				s = s + k[j]
+			s = s + k[0]
+			k = s
+			s = ""
+		return k
+
+	# Функция XOR
+	@staticmethod
+	def xor(a, b):
+		ans = ""
+		for i in range(len(a)):
+			if a[i] == b[i]:
+				ans = ans + "0"
+			else:
+				ans = ans + "1"
+		return ans
+
+	# Шифратор.
+	def des_encrypt(self, pt, rkb, rk):
+		pt = self.hex2bin(pt)
+
+		# Initial Permutation
+		pt = self.permute(pt, self.initial_perm, 64)
+
+		# Splitting
+		left = pt[0:32]
+		right = pt[32:64]
+		for i in range(0, 16):
+			# Expansion D-box: Expanding the 32 bits data into 48 bits
+			right_expanded = self.permute(right, self.exp_d, 48)
+
+			# XOR RoundKey[i] and right_expanded
+			xor_x = self.xor(right_expanded, rkb[i])
+
+			# S-boxes substituting the value from s-box table by calculating row and column
+			sbox_str = ""
+			for j in range(0, 8):
+				row = self.bin2dec(int(xor_x[j * 6] + xor_x[j * 6 + 5]))
+				col = self.bin2dec(
+					int(xor_x[j * 6 + 1] + xor_x[j * 6 + 2] + xor_x[j * 6 + 3] + xor_x[j * 6 + 4]))
+				val = self.sbox[j][row][col]
+				sbox_str = sbox_str + self.dec2bin(val)
+
+			# Straight D-box: After substituting rearranging the bits
+			sbox_str = self.permute(sbox_str, self.per, 32)
+
+			# XOR left and sbox_str
+			result = self.xor(left, sbox_str)
+			left = result
+
+			# Swapper
+			if i != 15:
+				left, right = right, left
+
+		# Combination
+		combine = left + right
+
+		# Final permutation: final rearranging of bits to get cipher text
+		cipher_text = self.permute(combine, self.final_perm, 64)
+		return cipher_text
+
+	# Получение из 64-битого ключа ключа длиной 56-бит
+	def create_56_key(self, key):
+		return self.permute(key, self.keyp, 56)
+
+	# Процедура, генерирующая 48-битные подключи.
+	def create_sub_keys(self, k):
+		# Splitting
+		left = k[0:28] # rkb for RoundKeys in binary
+		right = k[28:56] # rk for RoundKeys in hexadecimal
+
+		round_keys_binary = []
+		round_keys = []
+		for i in range(0, 16):
+			# Shifting the bits by nth shifts by checking from shift table
+			left = self.shift_left(left, self.shift_table[i])
+			right = self.shift_left(right, self.shift_table[i])
+
+			# Combination of left and right string
+			combine_str = left + right
+
+			# Compression of key from 56 to 48 bits
+			round_key = self.permute(combine_str, self.key_comp, 48)
+
+			round_keys_binary.append(round_key)
+			round_keys.append(self.bin2hex(round_key))
+
+		return round_keys_binary, round_keys
+
+	# Шифратор содержимого из заданного файла алгоритмом DES.
+	def encrypt(self, pt_file, enc_to, key):
+		with open(enc_to, 'w', encoding='utf-8') as file:
+			file.write('')
+		with open(pt_file, 'r', encoding='utf-8') as file:
+			contents = bytes(file.read(), encoding='windows-1251')
+			c_hex = contents.hex().upper()
+			for i in range(0, len(c_hex), 16):
+				pt_hex = c_hex[i:i + 16]
+				pt_hex_bin = self.hex2bin(pt_hex)
+				# --если крайний блок меньше 64 бит, то добавляем нули (padding).
+				if len(pt_hex_bin) < 64:
+					for j in range(abs(64 - len(pt_hex_bin))):
+						pt_hex_bin += "0"
+					pt_hex = self.bin2hex(pt_hex_bin)
+				# Первая итерация шифрования DES
+				rkb_1, rk_1 = self.create_sub_keys(self.hex2bin(key))
+				cipher_text = self.bin2hex(self.des_encrypt(pt_hex, rkb_1, rk_1))
+
+				# Запись шифрованного 64-битового блока данных в файл.
+				with open(enc_to, 'a') as enc:
+					enc.write(cipher_text)
+	
+	# Дешифратор содержимого из заданного файла алгоритмом DES.
+	def decrypt(self, ct_file, dec_to, key):
+		with codecs.open(dec_to, 'w', 'windows-1251') as file:
+			file.write('')
+		with codecs.open(ct_file, 'r','windows-1251') as file:
+			ct = file.read()
+			for i in range(0, len(ct), 16):
+				ct_hex = ct[i:i + 16]
+				# Первая итерация дешифрования DES.
+				rkb_2, rk_2 = self.create_sub_keys(self.hex2bin(key))
+				rkb_2_rev, rk_2_rev = rkb_2[::-1], rk_2[::-1]
+				plaintext = self.bin2hex(self.des_encrypt(ct_hex, rkb_2_rev, rk_2_rev))
+
+				# Запись расшифрованного 64-битового блока данных в файл.
+				with open(dec_to, 'a',encoding='utf-8') as dec:
+					dec.write(bytes.fromhex(plaintext).decode('windows-1251'))
+
+def string_to_hex(input_string):
+    hex_string = input_string.encode('utf-8').hex()
+    truncated_hex_string = hex_string[:16]
+
+    return truncated_hex_string.upper()
+
+def read_last_16_characters(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            file.seek(0, 2)  
+            file_end = file.tell()
+
+            if file_end >= 16:
+                file.seek(file_end - 16)
+            else:
+                file.seek(0) 
+
+            last_16_chars = file.read(16)  
+            return last_16_chars
+
+    except FileNotFoundError:
+        return "Файл не найден."
+    except Exception as e:
+        return f"Произошла ошибка: {e}"
+	
+def write_last_16_characters_to_file(source, target_file_path):
+    try:
+        if isinstance(source, str):
+            last_16_chars = source[-16:]  
         else:
-            return 'ERROR MESSAGE NOT PROPER SIZE'
+            with open(source, 'r') as source_file:
+                source_file.seek(0, 2)  
+                file_end = source_file.tell()
+                if file_end >= 16:
+                    source_file.seek(file_end - 16)
+                else:
+                    source_file.seek(0)
+                last_16_chars = source_file.read(16)
 
-    pc_1 = [57, 49, 41, 33, 25, 17, 9, 1, 58, 50, 42, 34, 26, 18, 10, 2, 59, 51, 43, 35, 27, 19, 11, 3, 60, 52, 44, 36, 
-            63, 55, 47, 39, 31, 23, 15, 7, 62, 54, 46, 38, 30, 22, 14, 6, 61, 53, 45, 37, 29, 21, 13, 5, 28, 20, 12, 4]
-    pc_2 = [14, 17, 11, 24, 1, 5, 3, 28, 15, 6, 21, 10, 23, 19, 12, 4, 26, 8, 16, 7, 27, 20, 13, 2, 41, 
-            52, 31, 37, 47, 55, 30, 40, 51, 45, 33, 48, 44, 49, 39, 56, 34, 53, 46, 42, 50, 36, 29, 32 ]
-    permuted = permute(intitial_state, pc_1, 56)
-    
-    key_schedule = []
-    left_half, right_half = permuted[0:28], permuted[28:56]
-    for loop in range(16):
-        if {0,1,8,15}.__contains__(loop):
-            left_half, right_half = shifted(left_half, 1), shifted(right_half, 1)
-        else:
-            left_half, right_half = shifted(left_half, 2), shifted(right_half, 2)
-        key_schedule.append(permute((left_half + right_half), pc_2, 48))
-    return key_schedule
+        with open(target_file_path, 'a') as target_file:
+            target_file.write(last_16_chars)  
 
-def encrypt(message, key):
+    except FileNotFoundError:
+        print("Исходный файл не найден.")
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
 
-    if len(message) != 64:
-        if len(message) == 16:
-            message = hex_to_binary(message, 16)
-        else:
-            return 'ERROR MESSAGE NOT PROPER SIZE'
+def menu():
+	choice = input('1. Зашифровать\n2. Расшифровать\n^:')
+	match choice:
+		case '1':
+			key = input("Введите ключ: ")
+			key_hex = string_to_hex(key)
+			des_encryptor = DES(pt_file='lab3/mumu.txt', enc_file='lab3/encrypted.txt', key=key_hex, mode='encrypt')
+			write_last_16_characters_to_file(key_hex, 'lab3/encrypted.txt')
 
-    key_schedule = generate_keys(key)
+		case '2':
+			choice2 = input('1. Ввести новый ключ\n2. Взять старый ключ\n^:')
+			match choice2:
+				case '1':
+					key = input("Введите ключ: ")
+					key_hex = string_to_hex(key)
+					des_decryptor = DES(enc_file='lab3/encrypted.txt', dec_file='lab3/decrypted.txt', key=key_hex, mode='decrypt')
 
-    perm = IP(message)
-    left_half, right_half = perm[0:32], perm[32:64]
-    
-    for loop in range(16):
-        left_half, right_half = round(left_half, right_half, key_schedule[loop])
-        if loop == 15: 
-            buffer = left_half
-            left_half = right_half
-            right_half = buffer
-    cyphertext = IP_Inverse(left_half + right_half)
-    return cyphertext
+				case '2':
+					key_hex = read_last_16_characters('lab3/encrypted.txt')
+					des_decryptor = DES(enc_file='lab3/encrypted.txt', dec_file='lab3/decrypted.txt', key=key_hex, mode='decrypt')
 
-def decrypt(message, key):
-
-    if len(message) != 64:
-        if len(message) == 16:
-            message = hex_to_binary(message, 16)
-        else:
-            return 'ERROR MESSAGE NOT PROPER SIZE'
-
-    key_schedule = generate_keys(key)
-
-    perm = IP(message)
-    left_half, right_half = perm[0:32], perm[32:64]
-
-    for loop in range(16):
-        left_half, right_half = round(left_half, right_half, key_schedule[15 - loop])
-        if loop == 15: 
-            buffer = left_half
-            left_half = right_half
-            right_half = buffer
-    cyphertext = IP_Inverse(left_half + right_half)
-    return cyphertext
-
-def read_plaintext(file_path):
-    with open(file_path, 'r', encoding='cp1251') as file:
-        plaintext = file.read().strip()  
-    return plaintext
-
-def write_ciphertext(file_path, ciphertext):
-    with open(file_path, 'w', encoding='cp1251') as file:
-        file.write(bytes.fromhex(ciphertext))  
-
-def write_decryptedtext(file_path, decryptedtext):
-    with open(file_path, 'w', encoding='cp1251') as file:
-        file.write(decryptedtext)  
-
-def pad_plaintext(plaintext):
-    binary_plaintext = ''.join(format(ord(c), '08b') for c in plaintext)
-    
-    while len(binary_plaintext) % 64 != 0:
-        binary_plaintext += '0'  
-    return binary_plaintext
-
-def encrypt_decrypt_file(input_file, key, encrypted_output_file, decrypted_output_file):
-
-    if len(key) != 16:
-        raise ValueError("Key must be a 16-character hex string.")
-
-    plaintext = read_plaintext(input_file)
-    
-    padded_plaintext = pad_plaintext(plaintext)
-
-    encrypted_text = ''
-    for i in range(0, len(padded_plaintext), 64):
-        block = padded_plaintext[i:i+64]
-        ciphertext = encrypt(block, key) 
-        encrypted_text += bin_to_hex(ciphertext, 64)  
-    
-    write_ciphertext(encrypted_output_file, encrypted_text)
-
-    decrypted_text = ''
-    for i in range(0, len(encrypted_text), 16):  
-        block = encrypted_text[i:i+16] 
-        decrypted_block = decrypt(hex_to_binary(block, 16), key) 
-        decrypted_text += ''.join(chr(int(decrypted_block[j:j+8], 2)) for j in range(0, 64, 8)) 
-
-    write_decryptedtext(decrypted_output_file, decrypted_text.strip())  
-
-input_file = 'lab3/mumu.txt'          
-key = '908F6CA04B08D401'                 
-encrypted_output_file = 'ciphertext.txt'  
-decrypted_output_file = 'decrypted.txt'    
-
-encrypt_decrypt_file(input_file, key, encrypted_output_file, decrypted_output_file)
-print("Encryption and decryption process completed.")
+if __name__ == "__main__":
+	menu()
