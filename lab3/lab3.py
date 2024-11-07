@@ -1,3 +1,5 @@
+import os
+
 def xor(a,b):
     store = ''
     for i in range(len(a)):
@@ -65,7 +67,6 @@ def s_boxes(bits):
                 [[12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11], [10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8], [9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6], [4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13 ]],
                 [[4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1], [13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6], [1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2], [6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12 ]],
                 [[13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7], [1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2], [7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8], [2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11 ]]]
-
     substituted_string = ''
     for i in range(0,48,6):
         substring = (bits[0:48][i:i+6])
@@ -161,37 +162,55 @@ def decrypt(message, key):
     cyphertext = IP_Inverse(left_half + right_half)
     return cyphertext
 
-def write_to_file(text, name):
-    with open(f'lab3/{name}.txt', 'w', encoding="UTF-8") as f:
-        f.write(text)
+def read_plaintext(file_path):
+    with open(file_path, 'r', encoding='cp1251') as file:
+        plaintext = file.read().strip()  
+    return plaintext
 
-    print(f"File {name}.txt created")
+def write_ciphertext(file_path, ciphertext):
+    with open(file_path, 'w', encoding='cp1251') as file:
+        file.write(bytes.fromhex(ciphertext))  
 
-def menu(text, key):
-    choice = input('1. encrypt\n2. decrypt\n')
-    match choice:
-        case '1':
-            encrypted = ''
-            for i in range(0, len(text), 64):
-                segment = text[i:i+64]  
-                encrypted_segment = str(encrypt(str(segment), key)) 
-                encrypted += encrypted_segment
-            write_to_file(encrypted, "encrypt")
-        case '2':
-            decrypted = ""
-            for i in range(0, len(text), 64):
-                segment = text[i:i+64]  
-                decrypted_segment = str(bin_to_hex(decrypt(segment, key), 64)) 
-                decrypted += decrypted_segment
-            write_to_file(decrypted, "decrypt")
+def write_decryptedtext(file_path, decryptedtext):
+    with open(file_path, 'w', encoding='cp1251') as file:
+        file.write(decryptedtext)  
 
-def main():
-    key16 = input('key: ')
-    # 908F6CA04B08D401 key
-
-    with open('lab3/mumu.txt', 'r', encoding="UTF-8") as file:
-        text = file.read()
+def pad_plaintext(plaintext):
+    binary_plaintext = ''.join(format(ord(c), '08b') for c in plaintext)
     
-    menu(text, key16)
+    while len(binary_plaintext) % 64 != 0:
+        binary_plaintext += '0'  
+    return binary_plaintext
 
-main()
+def encrypt_decrypt_file(input_file, key, encrypted_output_file, decrypted_output_file):
+
+    if len(key) != 16:
+        raise ValueError("Key must be a 16-character hex string.")
+
+    plaintext = read_plaintext(input_file)
+    
+    padded_plaintext = pad_plaintext(plaintext)
+
+    encrypted_text = ''
+    for i in range(0, len(padded_plaintext), 64):
+        block = padded_plaintext[i:i+64]
+        ciphertext = encrypt(block, key) 
+        encrypted_text += bin_to_hex(ciphertext, 64)  
+    
+    write_ciphertext(encrypted_output_file, encrypted_text)
+
+    decrypted_text = ''
+    for i in range(0, len(encrypted_text), 16):  
+        block = encrypted_text[i:i+16] 
+        decrypted_block = decrypt(hex_to_binary(block, 16), key) 
+        decrypted_text += ''.join(chr(int(decrypted_block[j:j+8], 2)) for j in range(0, 64, 8)) 
+
+    write_decryptedtext(decrypted_output_file, decrypted_text.strip())  
+
+input_file = 'lab3/mumu.txt'          
+key = '908F6CA04B08D401'                 
+encrypted_output_file = 'ciphertext.txt'  
+decrypted_output_file = 'decrypted.txt'    
+
+encrypt_decrypt_file(input_file, key, encrypted_output_file, decrypted_output_file)
+print("Encryption and decryption process completed.")
