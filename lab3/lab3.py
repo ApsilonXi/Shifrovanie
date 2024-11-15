@@ -341,7 +341,7 @@ class DES:
 					dec.write(bytes.fromhex(plaintext).decode('windows-1251'))
 
 def string_to_hex(input_string):
-    hex_string = input_string.encode('utf-8').hex()
+    hex_string = input_string.encode('windows-1251').hex()
     truncated_hex_string = hex_string[:16]
 
     return truncated_hex_string.upper()
