@@ -341,7 +341,7 @@ class DES:
 					dec.write(bytes.fromhex(plaintext).decode('windows-1251'))
 
 def string_to_hex(input_string):
-    hex_string = input_string.encode('windows-1251').hex()
+    hex_string = input_string.encode('utf-8').hex()
     truncated_hex_string = hex_string[:16]
 
     return truncated_hex_string.upper()
@@ -394,7 +394,7 @@ def menu():
 			key = input("Введите ключ: ")
 			key_hex = string_to_hex(key)
 			des_encryptor = DES(pt_file='lab3/mumu.txt', enc_file='lab3/encrypted.txt', key=key_hex, mode='encrypt')
-			write_last_16_characters_to_file(key_hex, 'lab3/encrypted.txt')
+			write_last_16_characters_to_file(key_hex, 'lab3/key.txt')
 
 		case '2':
 			choice2 = input('1. Ввести новый ключ\n2. Взять старый ключ\n^:')
@@ -405,7 +405,7 @@ def menu():
 					des_decryptor = DES(enc_file='lab3/encrypted.txt', dec_file='lab3/decrypted.txt', key=key_hex, mode='decrypt')
 
 				case '2':
-					key_hex = read_last_16_characters('lab3/encrypted.txt')
+					key_hex = read_last_16_characters('lab3/key.txt')
 					des_decryptor = DES(enc_file='lab3/encrypted.txt', dec_file='lab3/decrypted.txt', key=key_hex, mode='decrypt')
 
 if __name__ == "__main__":
