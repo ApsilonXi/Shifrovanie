@@ -2,12 +2,12 @@ from utils import *
 import math
 import base64
 
-# w = int(input("Введите размер слова в битах  (16, 32, 64): "))  # Размер слова в битах  (16, 32, 64)
-w = 16
-# r = int(input("Введите кол-во раундов: "))   # Кол-во раундов
-r = 20
-# Key = input("Введите секретный ключ: ")  # Секретный ключ
-Key = "test"
+w = int(input("Введите размер слова в битах  (16, 32, 64): "))  # Размер слова в битах  (16, 32, 64)
+#w = 16
+r = int(input("Введите кол-во раундов: "))   # Кол-во раундов
+#r = 20
+Key = input("Введите секретный ключ: ")  # Секретный ключ
+#Key = "test"
 
 Key_bit = base64.b64encode(bytes(Key, 'utf-8'))
 Key_bit = bytesToBin(Key_bit)  # Преобразование ключа в биты
@@ -55,7 +55,6 @@ def read_text_from_file(file_path):
   
 file_path = 'lab4/mumu.txt'  # Укажите путь к вашему файлу
 message = read_text_from_file(file_path)
-print("KEY: ", Key)
 
 message_bit = base64.b64encode(bytes(message, 'utf-8'))
 message_bit = bytesToBin(message_bit)  # Сообщение в битах
@@ -105,9 +104,21 @@ for i in range(0, len(message_bit), 4 * w):  # Цикл по блокам в 4 �
 
     encoded_message_bit += synchro_package
 
-print("ENCODED BIN MESSAGE: ", encoded_message_bit)
+with open("lab4\encrypted.txt", 'w', encoding='utf-8') as file:
+    file.write(encoded_message_bit)
+
+with open("lab4\ini.txt", "w", encoding='utf-8') as file:
+    file.write(init)
+
+#print("ENCODED BIN MESSAGE: ", encoded_message_bit)
 
 # Дешифрование
+'''with open("lab4\ini.txt", "r", encoding='utf-8') as file:
+    init = file.readline()
+
+with open("lab4\encrypted.txt", "r", encoding='utf-8') as file:
+    encoded_message_bit = file.readline()
+
 synchro_package = init  # Синхропосылка для декодирования
 decoded_message_bit = ""  # Инициализация расшифрованного сообщения
 
@@ -143,5 +154,8 @@ for i in range(0, len(encoded_message_bit), 4 * w):
 
     synchro_package = temp  # Переопределение синхропосылки
 
-print("DECODED BIN MESSAGE: ", decoded_message_bit)
-print("DECODED MESSAGE: ", base64.b64decode(binToBytes(decoded_message_bit)).decode('utf-8'))
+with open("lab4\decrypted.txt", 'w', encoding='utf-8') as file:
+    file.write(base64.b64decode(binToBytes(decoded_message_bit)).decode('utf-8'))'''
+
+#print("DECODED BIN MESSAGE: ", decoded_message_bit)
+#print("DECODED MESSAGE: ", base64.b64decode(binToBytes(decoded_message_bit)).decode('utf-8'))
