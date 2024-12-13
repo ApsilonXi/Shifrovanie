@@ -59,7 +59,8 @@ def find_primes_in_range(start, end):
     primes = list(primerange(start, end + 1))
     elapsed_time = time.time() - start_time
     return primes, elapsed_time
-
+    
+# поиск первых 100 первообразных корней для заданного числа p
 def find_primitive_roots(p):
     start_time = time.time()
     roots = [] 
