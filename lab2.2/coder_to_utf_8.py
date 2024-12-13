@@ -26,4 +26,4 @@ def convert_to_utf8(filename):
     os.replace(f.name, filename)
 
 # Example usage:
-convert_to_utf8('lab2.2/output12.txt')
+convert_to_utf8('lab2.2/output.txt')
