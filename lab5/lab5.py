@@ -1,112 +1,144 @@
 import random
 import time
-from sympy import isprime, primerange, primitive_root
+from sympy import primerange, primitive_root
 from sympy.ntheory.generate import randprime
 
-# тест Рабина-Миллера
-def miller_rabin_test(n, k):
-    if n < 2:
+# Проверка Рабина-Миллера
+def rabin_miller_test(p, t):
+    if p < 2: #число составное 
         return False
-    if n == 2 or n == 3:
+    if p in (2, 3): #число простое
         return True
-    if n % 2 == 0:
+    if p % 2 == 0: #число четное и составное
         return False
 
-    # n-1 в виде (2^r) * d
-    r, d = 0, n - 1
-    while d % 2 == 0:
-        r += 1
-        d //= 2
+    # Представление p-1 в виде 2^b * m
+    m = p - 1 
+    b = 0
+    while m % 2 == 0: 
+        m //= 2
+        b += 1
 
-    # Тестирование k раз
-    for _ in range(k):
-        a = random.randint(2, n - 2)
-        x = pow(a, d, n)
-        if x == 1 or x == n - 1:
+    for _ in range(t):
+        a = random.randint(2, p - 2) #выбор случайного числа в диапазоне
+        z = pow(a, m, p) # a**m mod p
+        if z == 1 or z == p - 1: #проходим текущий раунд и генерируем новое а
             continue
-        for _ in range(r - 1):
-            x = pow(x, 2, n)
-            if x == n - 1:
+
+        for _ in range(b - 1): # если z не удовлетворило условиям
+            z = pow(z, 2, p)
+            if z == p - 1:
                 break
-        else:
+        else: 
             return False
+
     return True
 
-# генерация n-битного простого числа
+# алгоритм генерации большого простого числа с алгоритмом Рабина-Миллера
 def generate_large_prime(n_bits, t):
     start_time = time.time()
-    iteration = 0
+    iterations = 0
+    small_primes = list(primerange(2, 2000))
+
     while True:
-        iteration += 1
+        iterations += 1
         candidate = random.getrandbits(n_bits)
-        if candidate % 2 == 0:
-            candidate += 1  # делаем нечетным
+        candidate |= (1 << n_bits - 1) | 1  # 2. устанавливаем старший и младший биты в 1 (старший для длины, младший для нечетности)
 
-        if miller_rabin_test(candidate, t):
-            end_time = time.time()
-            print(f"Простое число сгенерировано за {iteration} итераций.")
-            print(f"Затраченное время: {end_time - start_time:.5f} секунд.")
-            return candidate
+        #проверка не делимости
+        if any(candidate % p == 0 for p in small_primes):
+            continue
 
-# поиск простых чисел в заданном диапазоне
+        #Рабина-Миллера
+        if rabin_miller_test(candidate, t):
+            elapsed_time = time.time() - start_time
+            return candidate, iterations, elapsed_time
+
 def find_primes_in_range(start, end):
     start_time = time.time()
-    primes = list(primerange(start, end))
-    end_time = time.time()
-    print(f"Простые числа в диапазоне от {start} до {end}: {primes}")
-    print(f"Время на поиск простых чисел: {end_time - start_time:.5f} секунд.")
-    return primes
+    primes = list(primerange(start, end + 1))
+    elapsed_time = time.time() - start_time
+    return primes, elapsed_time
 
-# нахождение первых 100 первообразных корней
 def find_primitive_roots(p):
     start_time = time.time()
-    roots = []
-    for i in range(2, p):
+    roots = [] 
+
+    for candidate in range(2, p):
         if len(roots) >= 100:
             break
-        try:
-            root = primitive_root(p)
-            roots.append(root)
-        except ValueError:
-            continue
-    end_time = time.time()
-    print(f"Первые 100 первообразных корней: {roots[:100]}")
-    print(f"Время на поиск первообразных корней: {end_time - start_time:.5f} секунд.")
-    return roots[:100]
+        if pow(candidate, (p - 1) // 2, p) != 1:  # проверка условия для корня
+            roots.append(candidate)
 
-# моделирование обмена ключами по схеме Диффи-Хеллмана
-def diffie_hellman_key_exchange(t, n_bits):
-    # Генерация простых чисел X_A, X_B и n
-    X_A = generate_large_prime(n_bits, t)
-    X_B = generate_large_prime(n_bits, t)
-    n = generate_large_prime(n_bits, t)
+    elapsed_time = time.time() - start_time
+    return roots, elapsed_time
 
-    # Вычисление ключей
-    g = primitive_root(n)  # первообразный корень по модулю n
-    A = pow(g, X_A, n)     # открытый ключ A
-    B = pow(g, X_B, n)     # открытый ключ B
+def diffie_hellman_exchange(n_bits, t):
+    n, _, _ = generate_large_prime(n_bits, t)  # Случайное большое простое число
+    g = primitive_root(n)  # первообразный корень 
 
-    # Вычисление общего секрета
-    secret_A = pow(B, X_A, n)
-    secret_B = pow(A, X_B, n)
+    # Генерация секретных чисел
+    x_a = random.randint(2, n - 1)
+    x_b = random.randint(2, n - 1)
 
-    print(f"Общий секрет для абонента A: {secret_A}")
-    print(f"Общий секрет для абонента B: {secret_B}")
-    return secret_A, secret_B
+    # Вычисление открытых ключей
+    y_a = pow(g, x_a, n)
+    y_b = pow(g, x_b, n)
+
+    # Обмен ключами
+    k_a = pow(y_b, x_a, n)
+    k_b = pow(y_a, x_b, n)
+
+    return n, g, x_a, x_b, y_a, y_b, k_a, k_b
 
 if __name__ == "__main__":
-    # Генерация простого числа
-    n_bits = 65  # 65 бит - число больше чем 2^64
-    t = 5        # Количество проверок в тесте Рабина-Миллера
-    prime = generate_large_prime(n_bits, t)
+    while True:
+        print("Выберите опцию:")
+        print("1. Создать большое простое число и найти 100 первообразных")
+        print("2. Найти 100 первообразных для числа")
+        print("3. Найти все простые числа в диапазоне.")
+        print("4. Смоделировать обмен ключами между абонентами")
+        o = int(input("^: "))
+        match o:
+            case 1:
+                # Генерация большого простого числа
+                n_bits = int(input("Введите n: "))
+                if n_bits < 128:
+                    print("Должно быть от 128")
+                    break
+                t = int(input("Введите число проверок t: "))
+                prime, iterations, elapsed_time = generate_large_prime(n_bits, t)
+                print(f"Создано простое число: {prime}")
+                print(f"Итераций: {iterations}, Время: {elapsed_time:.2f} сек\n")
 
-    # Поиск простых чисел в диапазоне
-    start_range = 2**63
-    end_range = 2**64
-    primes_in_range = find_primes_in_range(start_range, end_range)
+                # Первые 100 первообразных корней
+                roots, elapsed_time = find_primitive_roots(prime)
+                print(f"Первые 100 первообразных {prime}: {roots}")
+                print(f"Время: {elapsed_time:.2f} сек")
 
-    # Поиск первых 100 первообразных корней
-    primitive_roots = find_primitive_roots(prime)
+            case 2:
+                prime = int(input("Введите число для нахождения его первообразных: "))
+                roots, elapsed_time = find_primitive_roots(prime)
+                print(f"Первые 100 первообразных {prime}: {roots}")
+                print(f"Время: {elapsed_time:.2f} сек")
 
-    # Моделирование обмена ключами по схеме Диффи-Хеллмана
-    secret_A, secret_B = diffie_hellman_key_exchange(t, n_bits)
+
+            case 3:
+                # Простые числа в диапазоне
+                start, end = int(input("Начало: ")), int(input("Конец: "))
+                primes, elapsed_time = find_primes_in_range(start, end)
+                print(f"Простые числа в диапазоне [{start}, {end}]: {primes}")
+                print(f"Время: {elapsed_time:.2f} сек")
+
+            case 4:
+                # Обмен ключами Диффи-Хеллмана
+                n_bits = int(input("Введите n: "))
+                t = int(input("Введите число проверок t: "))
+                n, g, x_a, x_b, y_a, y_b, k_a, k_b = diffie_hellman_exchange(n_bits, t)
+                print(f"n = {n}, g = {g}")
+                print(f"Секретные числа: X_A = {x_a}, X_B = {x_b}")
+                print(f"Открытые ключи: Y_A = {y_a}, Y_B = {y_b}")
+                print(f"Секретные ключи: K_A = {k_a}, K_B = {k_b}")
+
+            case _:
+                break
