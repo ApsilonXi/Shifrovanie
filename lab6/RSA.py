@@ -1,7 +1,6 @@
 import math as m
-from lab3 import *
+from for_RSA import *
 import random
-
 
 def inverse(a: int, m: int) -> int:
     m0, x0, x1 = m, 0, 1
@@ -49,9 +48,7 @@ def decrypt(private_key, ciphertext):
 
 
 def running():
-    print("RSA is running...")
-
-
+    print("Please, wait for a moment!")
 
 
 def extract_data(file_path):
@@ -75,11 +72,11 @@ def gen_key_data():
 
     public, private = generate_keypair(p, q, 1024)
     # print(f'Public key: [{public}]\nPrivate key: [{private}]')
-    with open("laba 6\\keys\\public_key_for_RSA.txt", mode = "w+") as f_key:
-        f_key.write(f'Public key: [{public}]')
+    with open("lab6\\keys\\public_key_for_RSA.txt", mode = "w+") as f_key:
+        f_key.write(f'Public: [{public}]')
     
-    with open("laba 6\\keys\\private_key_for_RSA.txt", mode = "w+") as f_key:
-        f_key.write(f'Private key: [{private}]')
+    with open("lab6\\keys\\private_key_for_RSA.txt", mode = "w+") as f_key:
+        f_key.write(f'Private: [{private}]')
     
     return p, q, public, private
 
@@ -94,6 +91,6 @@ def read_numbers_from_file(filename):
                 number = int(part)  # Преобразуем строку в целое число
                 numbers.append(number)  # Добавляем число в список
             except ValueError:
-                print(f"Не удалось преобразовать '{part}' в число. Пропустим его.")
+                pass
 
     return numbers
