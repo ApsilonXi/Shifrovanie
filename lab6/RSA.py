@@ -14,7 +14,7 @@ def inverse(a: int, m: int) -> int:
 def gcd(a: int, b: int) -> int:
     return a if b == 0 else m.gcd(a, a % b)
 
-
+#шаг 1
 def generate_keypair(p, q, bit_length):
 
     p = gen_prime(bit_length)
@@ -33,22 +33,18 @@ def generate_keypair(p, q, bit_length):
 
     return ((e, n), (d, n))
 
+#шаг 2
 def encrypt(public_key, plaintext):
     e, n = public_key
     ciphertext = [pow(ord(char), e, n) for char in plaintext]
     
     return ciphertext
 
-
-
+#шаг 3
 def decrypt(private_key, ciphertext):
     d, n = private_key
     plaintext = [chr(pow(char, d, n)) for char in ciphertext]
     return ''.join(plaintext)
-
-
-def running():
-    print("Please, wait for a moment!")
 
 
 def extract_data(file_path):

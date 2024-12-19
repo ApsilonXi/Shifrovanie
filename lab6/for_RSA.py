@@ -8,6 +8,7 @@ def gen_prime(bit_length=1024):
         if is_prime(num):
             return num
 
+#проверка на простое число
 def is_prime(n, k=5):
     if n == 2 or n == 3:
         return True
