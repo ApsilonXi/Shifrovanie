@@ -2,7 +2,7 @@ import math as m
 import random
 from random import randint, getrandbits
 
-def gen_prime(bits=1024):
+def gen_prime(bits=128):
     while True:
         num = getrandbits(bits)
         if rabin_miller_test(num):
@@ -40,6 +40,8 @@ def d_key(a, m):
         x0, x1 = x1 - q * x0, x0
     return x1 + m0 if x1 < 0 else x1
 
+
+#алгоритм rsa
 #шаг 1
 def keys(p, q, bits):
 
@@ -71,6 +73,10 @@ def decrypt(private_key, ciphertext):
     return ''.join(plaintext)
 
 
+
+
+
+# методы чтения/записи
 def read_keys(file_path):
     with open(file_path, 'r') as file:
         content1 = file.readline()
@@ -82,10 +88,10 @@ def read_keys(file_path):
 
 
 def create_keys():
-    p = gen_prime(1024)
-    q = gen_prime(1024)
+    p = gen_prime(128)
+    q = gen_prime(128)
 
-    public, private = keys(p, q, 1024)
+    public, private = keys(p, q, 128)
     with open("lab6\\public_key.txt", mode = "w+") as f_key:
         f_key.write(f'Public: [{public}]')
     
