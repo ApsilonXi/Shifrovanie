@@ -23,34 +23,32 @@ def menu():
         match choice:
             case "1":
                 key = input("Input key: ")
-                RSA.gen_key_data()
-                public_key_RSA = RSA.extract_data("lab6/public_key_for_RSA.txt")
-                ciphered_key = RSA.encrypt(public_key_RSA, key)
+                RSA.create_keys()
+                public_key = RSA.read_keys("lab6/public_key.txt")
+                ciphered_key = RSA.encrypt(public_key, key)
 
-                res_str = ""
+                enc_key = ""
                 for i in ciphered_key:
-                    res_str += str(i) + ", "
+                    enc_key += str(i) + ", "
 
                 with open("lab6/ciphered_key.txt", 'w+', encoding='utf-8') as file:
-                    file.write(res_str)
+                    file.write(enc_key)
 
             case "2":
                 key = read_numbers("lab6/ciphered_key.txt")
-                private_key_RSA = RSA.extract_data("lab6/private_key_for_RSA.txt")
-                decrypted_key = RSA.decrypt(private_key_RSA, key)
+                private_key = RSA.read_keys("lab6/private_key.txt")
+                decrypted_key = RSA.decrypt(private_key, key)
                 key_hex = DES.string_to_hex(decrypted_key)
 
                 des_encryptor = DES.DES(pt_file='lab6/mumu.txt', enc_file='lab6/encrypted.txt', key=key_hex, mode='encrypt')
-                print(f"Зашифрованный файл сохранён\n")
 
             case "3":
                 key = read_numbers("lab6/ciphered_key.txt")
-                private_key_RSA = RSA.extract_data("lab6/private_key_for_RSA.txt")
-                decrypted_key = RSA.decrypt(private_key_RSA, key)
+                private_key = RSA.read_keys("lab6/private_key.txt")
+                decrypted_key = RSA.decrypt(private_key, key)
                 key_hex = DES.string_to_hex(decrypted_key)
             
                 des_decryptor = DES.DES(enc_file='lab6/encrypted.txt', dec_file='lab6/decrypted.txt', key=key_hex, mode='decrypt')
-                print(f"Расшифрованный файл сохранён\n")
 
 if __name__ == "__main__":
     menu()
