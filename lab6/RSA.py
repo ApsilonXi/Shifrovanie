@@ -67,14 +67,13 @@ def gen_key_data():
     q = gen_prime(1024)
 
     public, private = generate_keypair(p, q, 1024)
-    # print(f'Public key: [{public}]\nPrivate key: [{private}]')
     with open("lab6\\keys\\public_key_for_RSA.txt", mode = "w+") as f_key:
         f_key.write(f'Public: [{public}]')
     
     with open("lab6\\keys\\private_key_for_RSA.txt", mode = "w+") as f_key:
         f_key.write(f'Private: [{private}]')
     
-    return p, q, public, private
+    #return p, q, public, private
 
 
 def read_numbers_from_file(filename):

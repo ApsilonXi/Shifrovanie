@@ -1,5 +1,4 @@
 import RSA
-
 import DES
 
 def If_needed():
@@ -15,6 +14,7 @@ def write_text_file(text, filename):
         return file.write(text)
 
 def Start():
+    
     while True:
         print("1. Шифрование ключа и дешифрование ключа\n2. Шифрование текста\n3. Дешифрование текста\n")
         choice = input("^: ")
@@ -22,8 +22,8 @@ def Start():
         match choice:
             case "1":
                 key = input("Input key: ")
+                RSA.gen_key_data()
                 public_key_RSA = RSA.extract_data("lab6/keys/public_key_for_RSA.txt")
-                
                 ciphered_key = RSA.encrypt(public_key_RSA, key)
 
                 res_str = ""
@@ -31,11 +31,8 @@ def Start():
                     res_str += str(i) + ", "
 
                 write_text_file(res_str, "lab6/keys/ciphered_key.txt")
-                # decrypted_key = RSA.decrypt(private_key_RSA, ciphered_key)
-                # write_text_file(decrypted_key, "laba 6/keys/decrypted key.txt")
 
             case "2":
-                # key = read_text_file("lab6/keys/key.txt")
                 key = RSA.read_numbers_from_file("lab6/keys/ciphered_key.txt")
                 private_key_RSA = RSA.extract_data("lab6/keys/private_key_for_RSA.txt")
                 decrypted_key = RSA.decrypt(private_key_RSA, key)
