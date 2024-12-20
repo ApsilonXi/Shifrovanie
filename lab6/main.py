@@ -1,19 +1,21 @@
 import RSA
 import DES
 
-def If_needed():
-    RSA.gen_key_data()
-    return {"status": "ok"}
+def read_numbers(filename):
+    numbers = []
+    with open(filename, "r") as file:
+        line = file.read()  
+        parts = line.split(", ")  
+        for part in parts:
+            try:
+                number = int(part)  
+                numbers.append(number) 
+            except ValueError:
+                pass
 
-def read_text_file(filename):
-    with open(filename, 'r', encoding='utf-8') as file:
-        return file.read()
-    
-def write_text_file(text, filename):
-    with open(filename, 'w+', encoding='utf-8') as file:
-        return file.write(text)
+    return numbers
 
-def Start():
+def menu():
     
     while True:
         print("1. Шифрование ключа и дешифрование ключа\n2. Шифрование текста\n3. Дешифрование текста\n")
@@ -23,18 +25,19 @@ def Start():
             case "1":
                 key = input("Input key: ")
                 RSA.gen_key_data()
-                public_key_RSA = RSA.extract_data("lab6/keys/public_key_for_RSA.txt")
+                public_key_RSA = RSA.extract_data("lab6/public_key_for_RSA.txt")
                 ciphered_key = RSA.encrypt(public_key_RSA, key)
 
                 res_str = ""
                 for i in ciphered_key:
                     res_str += str(i) + ", "
 
-                write_text_file(res_str, "lab6/keys/ciphered_key.txt")
+                with open("lab6/ciphered_key.txt", 'w+', encoding='utf-8') as file:
+                    file.write(res_str)
 
             case "2":
-                key = RSA.read_numbers_from_file("lab6/keys/ciphered_key.txt")
-                private_key_RSA = RSA.extract_data("lab6/keys/private_key_for_RSA.txt")
+                key = read_numbers("lab6/ciphered_key.txt")
+                private_key_RSA = RSA.extract_data("lab6/private_key_for_RSA.txt")
                 decrypted_key = RSA.decrypt(private_key_RSA, key)
                 key_hex = DES.string_to_hex(decrypted_key)
 
@@ -42,8 +45,8 @@ def Start():
                 print(f"Зашифрованный файл сохранён\n")
 
             case "3":
-                key = RSA.read_numbers_from_file("lab6/keys/ciphered_key.txt")
-                private_key_RSA = RSA.extract_data("lab6/keys/private_key_for_RSA.txt")
+                key = read_numbers("lab6/ciphered_key.txt")
+                private_key_RSA = RSA.extract_data("lab6/private_key_for_RSA.txt")
                 decrypted_key = RSA.decrypt(private_key_RSA, key)
                 key_hex = DES.string_to_hex(decrypted_key)
             
@@ -51,4 +54,4 @@ def Start():
                 print(f"Расшифрованный файл сохранён\n")
 
 if __name__ == "__main__":
-    Start()
+    menu()
