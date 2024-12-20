@@ -16,7 +16,6 @@ def read_numbers(filename):
     return numbers
 
 def menu():
-    
     while True:
         print("1. Шифрование ключа и дешифрование ключа\n2. Шифрование текста\n3. Дешифрование текста\n")
         choice = input("^: ")
